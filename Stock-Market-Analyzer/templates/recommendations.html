@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Recommendations - Stock Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            500: '#8b5cf6',
+                            600: '#7c3aed'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+    <div class="flex flex-1">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-gray-800 border-r border-gray-700 min-h-screen p-6">
+            <!-- Logo/Title -->
+            <div class="mb-8">
+                <h1 class="text-2xl font-bold text-white">Stock Analytics</h1>
+            </div>
+            
+            <!-- User Info -->
+            <div class="mb-8 text-center">
+                {% if user_name %}
+                    <p class="text-gray-300 text-lg font-semibold mb-2">Welcome, {{ user_name }}!</p>
+                    <a href="{{ url_for('logout') }}" 
+                       class="inline-block bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors">
+                        Logout
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" 
+                       class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors">
+                        Login
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="space-y-4">
+                <a href="{{ url_for('index') }}" class="block text-gray-300 hover:text-white hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors">
+                    🏠 Dashboard
+                </a>
+                <a href="{{ url_for('news_page') }}" class="block text-gray-300 hover:text-white hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors">
+                    📰 Market News
+                </a>
+                <a href="{{ url_for('recommendations_page') }}" class="block w-full bg-primary-500 text-white px-4 py-3 rounded-lg font-medium">
+                    📈 Stock Recommendations
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 p-8">
+            <!-- Header Section -->
+            <div class="mb-8">
+                <h1 class="text-4xl font-bold text-white mb-4">Stock Recommendations</h1>
+                <p class="text-gray-400 text-lg">AI-powered stock analysis and recommendations based on technical indicators</p>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-700">
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div class="flex-1 min-w-64">
+                        <label for="stock-symbols" class="block text-sm font-medium text-gray-300 mb-2">
+                            Stock Symbols (comma-separated)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="stock-symbols"
+                            class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all text-white placeholder-gray-400"
+                            placeholder="e.g., AAPL, MSFT, GOOGL, RELIANCE.NS, TCS.NS"
+                            
+                        >
+                    </div>
+                    <div>
+                        <label for="analysis-period" class="block text-sm font-medium text-gray-300 mb-2">
+                            Analysis Period
+                        </label>
+                        <select 
+                            id="analysis-period"
+                            class="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all text-white"
+                        >
+                            <option value="1mo">1 Month</option>
+                            <option value="3mo" selected>3 Months</option>
+                            <option value="6mo">6 Months</option>
+                            <option value="1y">1 Year</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button 
+                            id="analyze-btn"
+                            class="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                        >
+                            Analyze Stocks
+                        </button>
+                        <button 
+                            id="clear-btn"
+                            class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                        >
+                            Clear Results
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="hidden text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+                <p class="text-gray-400 mt-4">Analyzing stocks and generating recommendations...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="hidden bg-red-900 border border-red-700 rounded-xl p-6 text-center mb-8">
+                <svg class="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h3 class="text-lg font-semibold text-red-400 mb-2">Analysis Error</h3>
+                <p class="text-red-300" id="error-message">Unable to analyze stocks. Please check symbols and try again.</p>
+            </div>
+
+            <!-- Summary Cards -->
+            <div id="summary-cards" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-green-900 border border-green-700 rounded-xl p-6 text-center">
+                    <div class="text-3xl font-bold text-green-400" id="buy-count">0</div>
+                    <div class="text-green-300">Buy Recommendations</div>
+                </div>
+                <div class="bg-yellow-900 border border-yellow-700 rounded-xl p-6 text-center">
+                    <div class="text-3xl font-bold text-yellow-400" id="hold-count">0</div>
+                    <div class="text-yellow-300">Hold Recommendations</div>
+                </div>
+                <div class="bg-red-900 border border-red-700 rounded-xl p-6 text-center">
+                    <div class="text-3xl font-bold text-red-400" id="sell-count">0</div>
+                    <div class="text-red-300">Sell Recommendations</div>
+                </div>
+            </div>
+
+            <!-- Recommendations Container -->
+            <div id="recommendations-container" class="hidden space-y-6">
+                <!-- Recommendations will be dynamically inserted here -->
+            </div>
+
+            <!-- Initial State -->
+            <div id="initial-state" class="text-center py-12">
+                <svg class="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <h3 class="text-xl font-semibold text-gray-400 mb-2">Ready to Analyze</h3>
+                <p class="text-gray-500">Enter stock symbols above and click "Analyze Stocks" to get recommendations</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 border-t border-gray-700 py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-gray-400 text-sm">
+                &copy; 2024 Stock Analytics. Recommendations are for educational purposes only.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const loadingState = document.getElementById('loading-state');
+        const errorState = document.getElementById('error-state');
+        const recommendationsContainer = document.getElementById('recommendations-container');
+        const initialState = document.getElementById('initial-state');
+        const summaryCards = document.getElementById('summary-cards');
+        const stockSymbols = document.getElementById('stock-symbols');
+        const analysisPeriod = document.getElementById('analysis-period');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const errorMessage = document.getElementById('error-message');
+        const buyCount = document.getElementById('buy-count');
+        const holdCount = document.getElementById('hold-count');
+        const sellCount = document.getElementById('sell-count');
+
+        // Show/hide states
+        function showState(state) {
+            loadingState.classList.add('hidden');
+            errorState.classList.add('hidden');
+            recommendationsContainer.classList.add('hidden');
+            initialState.classList.add('hidden');
+            summaryCards.classList.add('hidden');
+            
+            state.classList.remove('hidden');
+        }
+
+        // Get recommendation badge HTML
+        function getRecommendationBadge(recommendation, confidence) {
+            let badgeClass, textClass;
+            switch(recommendation.toLowerCase()) {
+                case 'buy':
+                case 'strong buy':
+                    badgeClass = 'bg-green-900 border-green-700';
+                    textClass = 'text-green-300';
+                    break;
+                case 'sell':
+                case 'strong sell':
+                    badgeClass = 'bg-red-900 border-red-700';
+                    textClass = 'text-red-300';
+                    break;
+                default:
+                    badgeClass = 'bg-yellow-900 border-yellow-700';
+                    textClass = 'text-yellow-300';
+            }
+            
+            return `
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${badgeClass} ${textClass}">
+                        ${recommendation}
+                    </span>
+                    <span class="text-gray-400 text-sm">Confidence: ${confidence}%</span>
+                </div>
+            `;
+        }
+
+        // Create recommendation card HTML
+        function createRecommendationCard(rec) {
+            return `
+                <div class="bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-1">${rec.symbol}</h3>
+                            <p class="text-gray-400 text-sm">${rec.name || 'Stock Analysis'}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-white">$${rec.current_price?.toFixed(2) || 'N/A'}</div>
+                            <div class="text-sm ${rec.price_change >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                ${rec.price_change >= 0 ? '+' : ''}${rec.price_change?.toFixed(2) || 0}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${getRecommendationBadge(rec.recommendation, rec.confidence)}
+                    
+                    <div class="mt-6 grid grid-cols-2 gap-4">
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <div class="text-gray-400 text-xs mb-1">RSI (14)</div>
+                            <div class="text-white font-semibold">${rec.technical_indicators?.rsi?.toFixed(1) || 'N/A'}</div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <div class="text-gray-400 text-xs mb-1">EMA Signal</div>
+                            <div class="text-white font-semibold">${rec.technical_indicators?.ema_signal || 'N/A'}</div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <div class="text-gray-400 text-xs mb-1">Volume Trend</div>
+                            <div class="text-white font-semibold">${rec.technical_indicators?.volume_trend || 'N/A'}</div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <div class="text-gray-400 text-xs mb-1">Volatility</div>
+                            <div class="text-white font-semibold">${rec.technical_indicators?.volatility || 'N/A'}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-gray-700 rounded-lg">
+                        <div class="text-gray-400 text-xs mb-2">Analysis Summary</div>
+                        <p class="text-gray-300 text-sm">${rec.reasoning || 'Technical analysis based on multiple indicators including EMAs, RSI, and volume trends.'}</p>
+                    </div>
+                    
+                    <div class="mt-4 text-xs text-gray-500">
+                        Last updated: ${new Date().toLocaleString()}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Update summary cards
+        function updateSummaryCards(recommendations) {
+            let buyCounter = 0, holdCounter = 0, sellCounter = 0;
+            
+            recommendations.forEach(rec => {
+                switch(rec.recommendation.toLowerCase()) {
+                    case 'buy':
+                    case 'strong buy':
+                        buyCounter++;
+                        break;
+                    case 'sell':
+                    case 'strong sell':
+                        sellCounter++;
+                        break;
+                    default:
+                        holdCounter++;
+                }
+            });
+            
+            buyCount.textContent = buyCounter;
+            holdCount.textContent = holdCounter;
+            sellCount.textContent = sellCounter;
+        }
+
+        // Fetch recommendations from API
+        async function fetchRecommendations() {
+            try {
+                showState(loadingState);
+                
+                const symbols = stockSymbols.value.trim();
+                const period = analysisPeriod.value;
+                
+                if (!symbols) {
+                    throw new Error('Please enter at least one stock symbol');
+                }
+                
+                const response = await fetch('/api/recommendations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        symbols: symbols,
+                        period: period
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.status !== 'ok') {
+                    throw new Error(data.message || 'API returned error status');
+                }
+                
+                if (!data.recommendations || data.recommendations.length === 0) {
+                    throw new Error('No recommendations generated for the provided symbols');
+                }
+                
+                // Display recommendations
+                recommendationsContainer.innerHTML = data.recommendations.map(createRecommendationCard).join('');
+                updateSummaryCards(data.recommendations);
+                
+                showState(recommendationsContainer);
+                summaryCards.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error fetching recommendations:', error);
+                errorMessage.textContent = error.message;
+                showState(errorState);
+            }
+        }
+
+        // Event listeners
+        analyzeBtn.addEventListener('click', fetchRecommendations);
+
+        clearBtn.addEventListener('click', () => {
+            stockSymbols.value = 'AAPL, MSFT, GOOGL, TSLA, AMZN';
+            showState(initialState);
+        });
+
+        // Allow Enter key to analyze
+        stockSymbols.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                analyzeBtn.click();
+            }
+        });
+
+        // Initial state
+        showState(initialState);
+    </script>
+</body>
+</html>

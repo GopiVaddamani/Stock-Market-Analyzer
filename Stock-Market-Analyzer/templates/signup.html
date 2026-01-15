@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Your Account</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='signup.css') }}">
+</head>
+<body>
+
+<!-- Full Screen Money Animation Background -->
+<div class="money-animation">
+    <!-- Dollar Signs -->
+    <div class="dollar-sign" style="left: 5%; animation-delay: 0s;">$</div>
+    <div class="dollar-sign" style="left: 15%; animation-delay: 3s;">$</div>
+    <div class="dollar-sign" style="left: 25%; animation-delay: 6s;">$</div>
+    <div class="dollar-sign" style="left: 35%; animation-delay: 9s;">$</div>
+    <div class="dollar-sign" style="left: 45%; animation-delay: 12s;">$</div>
+    <div class="dollar-sign" style="left: 55%; animation-delay: 2s;">$</div>
+    <div class="dollar-sign" style="left: 65%; animation-delay: 5s;">$</div>
+    <div class="dollar-sign" style="left: 75%; animation-delay: 8s;">$</div>
+    <div class="dollar-sign" style="left: 85%; animation-delay: 11s;">$</div>
+    <div class="dollar-sign" style="left: 95%; animation-delay: 14s;">$</div>
+
+    <!-- Coins -->
+    <div class="coin" style="left: 10%; animation-delay: 1s;"></div>
+    <div class="coin" style="left: 20%; animation-delay: 4s;"></div>
+    <div class="coin" style="left: 30%; animation-delay: 7s;"></div>
+    <div class="coin" style="left: 40%; animation-delay: 10s;"></div>
+    <div class="coin" style="left: 60%; animation-delay: 13s;"></div>
+    <div class="coin" style="left: 70%; animation-delay: 16s;"></div>
+    <div class="coin" style="left: 80%; animation-delay: 19s;"></div>
+    <div class="coin" style="left: 90%; animation-delay: 22s;"></div>
+
+    <!-- Money Lines -->
+    <div class="money-line" style="top: 10%; width: 200px; animation-delay: 0s;"></div>
+    <div class="money-line" style="top: 25%; width: 150px; animation-delay: 4s;"></div>
+    <div class="money-line" style="top: 40%; width: 300px; animation-delay: 8s;"></div>
+    <div class="money-line" style="top: 55%; width: 180px; animation-delay: 12s;"></div>
+    <div class="money-line" style="top: 70%; width: 250px; animation-delay: 16s;"></div>
+    <div class="money-line" style="top: 85%; width: 120px; animation-delay: 20s;"></div>
+
+    <!-- Additional Elements for Richness -->
+    <div class="money-symbol" style="left: 12%; animation-delay: 15s;">€</div>
+    <div class="money-symbol" style="left: 32%; animation-delay: 18s;">¥</div>
+    <div class="money-symbol" style="left: 52%; animation-delay: 21s;">£</div>
+    <div class="money-symbol" style="left: 72%; animation-delay: 24s;">₹</div>
+    <div class="money-symbol" style="left: 92%; animation-delay: 27s;">₿</div>
+</div>
+
+<!-- Centered Signup Form -->
+<div class="form-container">
+    <form method="POST" class="signup-form">
+        <div class="form-header">
+            <h2>Create Your Account</h2>
+            <p>Start your journey to financial success</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="form-group">
+            <label for="fname">First Name</label>
+            <input type="text" id="fname" name="fname" class="form-control" required placeholder="Enter your first name">
+        </div>
+
+        <div class="form-group">
+            <label for="lname">Last Name</label>
+            <input type="text" id="lname" name="lname" class="form-control" required placeholder="Enter your last name">
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" class="form-control" required placeholder="your@email.com">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <div class="password-container">
+                <input type="password" id="password" name="password" class="form-control" required placeholder="Create a strong password">
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <span class="btn-text">Create Account</span>
+        </button>
+
+        <div class="security-badge">
+            <span class="security-icon">🔒</span>
+            256-bit SSL encryption • Your data is secure
+        </div>
+
+        <div class="login-link">
+            Already have an account? <a href="{{ url_for('login') }}">Sign in here</a>
+        </div>
+    </form>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JavaScript -->
+<script>
+    function togglePassword() {
+        const input = document.getElementById("password");
+        const toggle = document.querySelector(".toggle-password");
+        
+        if (input.type === "password") {
+            input.type = "text";
+            toggle.textContent = "🙈";
+        } else {
+            input.type = "password";
+            toggle.textContent = "👁️";
+        }
+    }
+
+    // Add smooth animations on form load
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.signup-form');
+        form.style.opacity = '0';
+        form.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            form.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            form.style.opacity = '1';
+            form.style.transform = 'translateY(0)';
+        }, 200);
+    });
+
+    // Enhanced form validation feedback
+    const inputs = document.querySelectorAll('.form-control');
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.value.trim() !== '') {
+                this.style.borderColor = '#10b981';
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
